@@ -1,7 +1,7 @@
 # Git Automation Script
 # Written by Kevin Cai, Jan 2020
 
-# Usage: python3.8 git-update.py <target_repo> <release_branch>
+# Usage: python3.8 git-update.py <target_repo> <production_branch> <release_branch>
 import requests
 import sys
 from pprint import pprint
@@ -64,7 +64,7 @@ def gen_pull_title(source_branch, dest_branch):
 
 
 # main scripting logic
-def main(target_repo, release_branch):
+def main(target_repo, production_branch, release_branch):
     res = get_request(REPO_URL)
     repo_link = find_repo(res['values'], target_repo)       # get repo info for the target repo
 
@@ -73,7 +73,7 @@ def main(target_repo, release_branch):
 
     pull_url = repo_link['links']['pullrequests']['href']
 
-    pull_res = make_pull_request(pull_url, PROJECT_RELEASE, release_branch)       
+    pull_res = make_pull_request(pull_url, PROJECT_RELEASE, production_branch)       
 
     # if pull request is not successful:
     if (pull_res.status_code == 400):       # return relevant message for pull request failure (no changes, branch not exist, etc.)
@@ -85,10 +85,11 @@ def main(target_repo, release_branch):
         sys.exit('Pull request successfully created.')
 
 if __name__ == "__main__":
-    if (len(sys.argv) < 3):
-        sys.exit('Usage: python3 git-update.py <target_repo> <release_branch>')
+    if (len(sys.argv) < 4):
+        sys.exit('Usage: python3 git-update.py <target_repo> <production_branch> <release_branch>')
 
     target_repo = sys.argv[1]
-    release_branch = sys.argv[2]
+    production_branch = sys.argv[2]
+    release_branch = sys.argv[3]
 
-    main(target_repo, release_branch)
+    main(target_repo, production_branch, release_branch)
