@@ -30,6 +30,27 @@ def find_repo(repo_list, repo):
             return r
     return None
 
+def find_branch(branch, target_branch):
+    for b in branch:
+        if (b['name'] == target_branch):
+            return b
+    return None
+
+def repo_iterate(repo_list, production_branch, release_branch):
+    for r in repo_list:
+        print("Checking repo <{}>".format(r['name']))
+
+        branch_url = r['links']['branches']['href']
+        res = get_request(branch_url)
+        branch = res['values']
+        if (find_branch(branch, release_branch) != None): # if release_branch exists
+            pull_url = r['links']['pullrequests']['href']
+            pull_res = make_pull_request(pull_url, PROJECT_RELEASE, production_branch)
+        else:
+            # bamboo stuff
+            print("Project release branch <{}> doesn't exist".format(release_branch))
+        print("=================")
+
 # makes a POST request to BitBucket API - requests a pull request
 def make_pull_request(pull_url, source_branch, dest_branch):
     print("Attempting to make pull request from <{}> to <{}>".format(source_branch, dest_branch))
@@ -55,8 +76,17 @@ def make_pull_request(pull_url, source_branch, dest_branch):
     }
 
     response = requests.request("POST", url, headers=headers, data = payload)
+    if (response.status_code == 400):       # return relevant message for pull request failure (no changes, branch not exist, etc.)
+        data = response.json()
+        message = data['error']['message']
+        print(message)
+        return False
 
-    return response
+    if (response.status_code == 201):
+        print('Pull request successfully created.') 
+        return True   
+
+    return False
 
 # helper function to generate string to serve as pull request title
 def gen_pull_title(source_branch, dest_branch):
@@ -86,10 +116,12 @@ def main(target_repo, production_branch, release_branch):
 
 if __name__ == "__main__":
     if (len(sys.argv) < 4):
-        sys.exit('Usage: python3 git-update.py <target_repo> <production_branch> <release_branch>')
+        sys.exit('Usage: python3 git-update.py <target_env> <production_branch> <release_branch>')
 
-    target_repo = sys.argv[1]
+    target_env = sys.argv[1]
     production_branch = sys.argv[2]
     release_branch = sys.argv[3]
 
-    main(target_repo, production_branch, release_branch)
+    repos = get_request(REPO_URL)
+    repo_iterate(repos['values'], production_branch, release_branch)
+    #main(target_repo, production_branch, release_branch)
