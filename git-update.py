@@ -7,11 +7,16 @@ import sys
 from pprint import pprint
 import json
 from base64 import b64encode
+from datetime import datetime
 
 # /repositories/{workspace} - returns all repos under the specified UUID
 REPO_URL = 'https://api.bitbucket.org/2.0/repositories/kevcai' # corresponds to specific workspace (will be DPE icare workspace url) -> search all repos under that workspace
 AUTH_TOKEN =  'Basic {}'.format(b64encode(b"kevcai@deloitte.com.au:f4ithGa1ns").decode("ascii")) # basic auth generated using bitbucket user credentials - necessary to access private repos
 PROJECT_RELEASE = 'master' # master should be the same as project release
+
+f = open("log.txt", "w")
+f.write("Git Update Logs. Created {}\n\n".format(datetime.now()))
+f = open("log.txt", "a+")
 
 # basic get request function
 def get_request(url):
@@ -39,6 +44,7 @@ def find_branch(branch, target_branch):
 def repo_iterate(repo_list, production_branch, release_branch):
     for r in repo_list:
         print("Checking repo <{}>".format(r['name']))
+        #f.write("Checking repo <{}>\n".format(r['name']))
 
         branch_url = r['links']['branches']['href']
         res = get_request(branch_url)
@@ -49,11 +55,15 @@ def repo_iterate(repo_list, production_branch, release_branch):
         else:
             # bamboo stuff
             print("Project release branch <{}> doesn't exist".format(release_branch))
+            #f.write("Project release branch <{}> doesn't exist\n".format(release_branch))
         print("=================")
+        #f.write("=================\n")
+
 
 # makes a POST request to BitBucket API - requests a pull request
 def make_pull_request(pull_url, source_branch, dest_branch):
     print("Attempting to make pull request from <{}> to <{}>".format(source_branch, dest_branch))
+    #f.write("Attempting to make pull request from <{}> to <{}>\n".format(source_branch, dest_branch))
     url = pull_url
 
     body = {
@@ -80,10 +90,16 @@ def make_pull_request(pull_url, source_branch, dest_branch):
         data = response.json()
         message = data['error']['message']
         print(message)
+        #f.write(message+"\n")
         return False
 
     if (response.status_code == 201):
         print('Pull request successfully created.') 
+        res = response.json()
+        f.write("Pull request for repo <{}>\n".format(res['destination']['repository']['full_name']))
+        f.write("Made pull request from <{}> to <{}>\n".format(source_branch, dest_branch))
+        f.write("Pull request can be found at: {}\n".format(res['links']['html']['href']))
+        f.write("===========================\n")
         return True   
 
     return False
@@ -92,7 +108,7 @@ def make_pull_request(pull_url, source_branch, dest_branch):
 def gen_pull_title(source_branch, dest_branch):
     return "Merge {} into {}".format(source_branch, dest_branch)
 
-
+'''
 # main scripting logic
 def main(target_repo, production_branch, release_branch):
     res = get_request(REPO_URL)
@@ -113,6 +129,7 @@ def main(target_repo, production_branch, release_branch):
         
     if (pull_res.status_code == 201):
         sys.exit('Pull request successfully created.')
+'''
 
 if __name__ == "__main__":
     if (len(sys.argv) < 4):
@@ -120,8 +137,10 @@ if __name__ == "__main__":
 
     target_env = sys.argv[1]
     production_branch = sys.argv[2]
-    release_branch = sys.argv[3]
+    release_branch = sys.argv[3]    
 
     repos = get_request(REPO_URL)
     repo_iterate(repos['values'], production_branch, release_branch)
     #main(target_repo, production_branch, release_branch)
+
+    f.close()
