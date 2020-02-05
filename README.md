@@ -7,7 +7,7 @@ The script will automatically compare the production_branch and release_branch a
 
 ## Usage
 1. Install python dependencies with `pip` and `requirements.txt`
-2. Run script `python3 git-update.py <target_repo> <production_branch> <release_branch>`
+2. Run script `python3 git-update.py <target_env> <production_branch> <release_branch>`
 
 
 NOTE: Files `git-api.js` and `git-update.js` in `test_code` are files from early testing.
