@@ -1,5 +1,5 @@
 # git-automation
-### Git automation project for Deloitte.
+### Git automation project.
 ---
 Tool to automatically track changes between branches.  
 Specify a target repo, production_branch and release_branch.  
